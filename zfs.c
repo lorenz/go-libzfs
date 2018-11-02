@@ -186,6 +186,31 @@ property_list_t *read_dataset_property(dataset_list_t *dataset, int prop) {
 	return list;
 }
 
+property_list_t *read_written_property(dataset_list_t *dataset, const char* prop)
+{
+	int r = 0;
+	zprop_source_t source;
+	char *strval;
+	property_list_ptr list = NULL;
+	list = new_property_list();
+
+	source = ZPROP_SRC_LOCAL;
+
+	r = zfs_prop_get_written(dataset->zh, prop,
+							 list->value, INT_MAX_VALUE, 1);
+
+	if (r != 0 && list != NULL)
+	{
+		free_properties(list);
+		source = ZPROP_SRC_NONE;
+		(void)strncpy(list->source,
+					  "none", sizeof(list->source));
+		(void)strncpy(list->value,
+					  "-", sizeof(list->value));
+	}
+	return list;
+}
+
 // int read_user_property(zfs_handle_t *zh, property_list_t *list, const char *prop) {
 property_list_t *read_user_property(dataset_list_t *dataset, const char* prop) {
 	nvlist_t *user_props = zfs_get_user_props(dataset->zh);

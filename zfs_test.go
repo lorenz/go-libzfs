@@ -2,6 +2,12 @@ package zfs_test
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+	"strconv"
+	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/lorenz/go-libzfs"
@@ -119,6 +125,70 @@ func zfsTestDatasetSnapshot(t *testing.T) {
 	}
 	defer d.Close()
 	print("PASS\n\n")
+}
+
+func zfsTestDatasetWrittenProperty(t *testing.T) {
+	snapNameParts := strings.Split(TSTDatasetPathSnap, "@")
+	println("TEST DATASET GetWrittenProperty( written@", snapNameParts[1], " ) ... ")
+	d, err := zfs.DatasetOpen(TSTDatasetPath)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	defer d.Close()
+	prop, err := d.GetWrittenProperty(fmt.Sprintf("written@%v", snapNameParts[1]))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	written, err := strconv.ParseInt(prop.Value, 10, 64)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if written != 0 {
+		t.Errorf("FAIL: written property has value %v, expected 0 since volume was not yet modified", written)
+	}
+	if err := d.Mount("", 0); err != nil {
+		t.Error(err)
+		return
+	}
+	if err := d.ReloadProperties(); err != nil {
+		t.Error(err)
+		return
+	}
+	dir, err := ioutil.TempDir("", "zfs-test")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	defer os.RemoveAll(dir)
+
+	if err := syscall.Mount(d.Properties[zfs.DatasetPropName].Value, dir, "zfs", 0, ""); err != nil {
+		t.Error(err)
+		return
+	}
+	defer syscall.Unmount(dir, 0)
+	err = ioutil.WriteFile(path.Join(dir, "test"), []byte("Hello World"), 0640)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	syscall.Unmount(dir, 0)
+	propAfter, err := d.GetWrittenProperty(fmt.Sprintf("written@%v", snapNameParts[1]))
+	println(fmt.Sprintf("written@%v", snapNameParts[1]))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	writtenAfter, err := strconv.ParseInt(propAfter.Value, 10, 64)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if writtenAfter <= 0 {
+		t.Errorf("FAIL: written property has value %v, expected larger than 0 since volume was modified", writtenAfter)
+	}
 }
 
 func zfsTestDatasetDestroy(t *testing.T) {

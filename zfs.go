@@ -324,6 +324,24 @@ func (d *Dataset) GetUserProperty(p string) (prop Property, err error) {
 	return
 }
 
+func (d *Dataset) GetWrittenProperty(p string) (prop Property, err error) {
+	if d.list == nil {
+		err = errors.New(msgDatasetIsNil)
+		return
+	}
+	csp := C.CString(p)
+	defer C.free(unsafe.Pointer(csp))
+	plist := C.read_written_property(d.list, csp)
+	if plist == nil {
+		err = LastError()
+		return
+	}
+	defer C.free_properties(plist)
+	prop = Property{Value: C.GoString(&(*plist).value[0]),
+		Source: C.GoString(&(*plist).source[0])}
+	return
+}
+
 // SetProperty set ZFS dataset property to value. Not all properties can be set,
 // some can be set only at creation time and some are read only.
 // Always check if returned error and its description.

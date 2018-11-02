@@ -134,6 +134,7 @@ const char *dataset_get_name(dataset_list_ptr ds);
 
 property_list_t *read_dataset_property(dataset_list_t *dataset, int prop);
 property_list_t *read_user_property(dataset_list_t *dataset, const char* prop);
+property_list_t *read_written_property(dataset_list_t *dataset, const char *prop);
 
 char** alloc_cstrings(int size);
 void strings_setat(char **a, int at, char *v);

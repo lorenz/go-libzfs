@@ -23,6 +23,7 @@ func Test(t *testing.T) {
 	zfsTestDatasetCreate(t)
 	zfsTestDatasetOpen(t)
 	zfsTestDatasetSnapshot(t)
+	zfsTestDatasetWrittenProperty(t)
 	zfsTestDatasetOpenAll(t)
 
 	zfsTestDatasetDestroy(t)
