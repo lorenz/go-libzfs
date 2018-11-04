@@ -160,6 +160,33 @@ func (d *Dataset) SendOne(FromName string, outf *os.File, flags *SendFlags) (err
 	return
 }
 
+func (d *Dataset) SendResume(token string, outf *os.File, flags *SendFlags) (err error) {
+	var ctoken *C.char
+	var lzc_send_flags uint32
+
+	if flags.Replicate || flags.DoAll || flags.Props || flags.Dedup || flags.DryRun {
+		err = fmt.Errorf("Unsupported flag with filesystem or bookmark.")
+		return
+	}
+
+	if flags.LargeBlock {
+		lzc_send_flags |= C.LZC_SEND_FLAG_LARGE_BLOCK
+	}
+	if flags.EmbedData {
+		lzc_send_flags |= C.LZC_SEND_FLAG_EMBED_DATA
+	}
+	// if (flags.Compress)
+	// 	lzc_send_flags |= LZC_SEND_FLAG_COMPRESS;
+
+	ctoken = C.CString(token)
+	defer C.free(unsafe.Pointer(ctoken))
+	cerr := C.zfs_send_one(d.list.zh, ctoken, C.int(outf.Fd()), lzc_send_flags)
+	if cerr != 0 {
+		err = LastError()
+	}
+	return
+}
+
 func (d *Dataset) Send(outf *os.File, flags SendFlags) (err error) {
 	if flags.Replicate {
 		flags.DoAll = true
