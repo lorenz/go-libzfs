@@ -5,6 +5,8 @@
 [![GoDoc](https://godoc.org/github.com/lorenz/go-libzfs?status.svg)](https://godoc.org/github.com/lorenz/go-libzfs)
 
 # Fork status
+This has now been superseded by [GoZFS](https://github.com/lorenz/go-zfs). I'm focusing my efforts there.
+
 This fork has two main features that are not part of the original repository
 * Compatible with ZFSOnLinux 0.7+
 * Much better error handling using a custom type which exposes errno information
